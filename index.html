@@ -771,7 +771,8 @@ function loadConvosFromFirebase() {
 // ── FIREBASE: SUBSCRIBE TO MESSAGES ──────────────────────────────────────────
 function subscribeToMessages(num) {
   if (listeners[num]) return; // already listening
-  const msgsRef = query(ref(db, `msgs/${num}`), orderByChild('ts'), limitToLast(200));
+  // Listen only to NEW messages (limitToLast 1 won't work for new ones, use onChildAdded on full path)
+  const msgsRef = ref(db, 'msgs/' + num);
   listeners[num] = onChildAdded(msgsRef, snap => {
     const msg = snap.val();
     msg.id = snap.key;
@@ -782,16 +783,20 @@ function subscribeToMessages(num) {
     if (msg.dir === 'recv' && num !== activeNum) {
       convos[num].unread = (convos[num].unread || 0) + 1;
       toast('💬 New message from ' + (convos[num].name || num));
-      // Notification
       if (Notification.permission === 'granted') {
         new Notification('Triko CRM — ' + (convos[num].name || num), { body: msg.content, icon: '' });
       }
     }
     saveConvos();
     renderConvoList();
+    // Only render in chat if active AND not already rendered (avoid duplicate on re-open)
     if (num === activeNum) {
-      renderMessage(msg);
-      scrollMsgs();
+      if (!window._renderedMsgIds) window._renderedMsgIds = new Set();
+      if (!window._renderedMsgIds.has(msg.id)) {
+        window._renderedMsgIds.add(msg.id);
+        renderMessage(msg);
+        scrollMsgs();
+      }
     }
   });
 }
@@ -799,39 +804,55 @@ function subscribeToMessages(num) {
 // ── OPEN CHAT ─────────────────────────────────────────────────────────────────
 window.openChat = async (num) => {
   activeNum = num;
-  const conv = convos[num] || { name: num, unread: 0 };
-  conv.unread = 0;
+
+  // Close any open modals
+  document.getElementById('contactPickerModal').classList.add('gone');
+  document.getElementById('manualModal').classList.add('gone');
+
+  if (!convos[num]) convos[num] = { name: num, unread: 0, lastMsg: '', lastTime: Date.now() };
+  convos[num].unread = 0;
   saveConvos();
 
-  // UI
+  const conv = convos[num];
+
+  // Show chat panel, hide sidebar
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('chatPanel').classList.add('open');
   document.getElementById('chatName').textContent = conv.name || num;
   document.getElementById('chatNum').textContent = '+' + num;
   document.getElementById('chatAvatar').textContent = (conv.name || num)[0].toUpperCase();
 
-  // Clear messages area
+  // Clear messages area and rendered set
   const area = document.getElementById('msgsArea');
-  area.innerHTML = '';
+  area.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">Loading messages...</div>';
+  window._renderedMsgIds = new Set();
 
-  // Load messages from Firebase
-  const msgsRef = query(ref(db, `msgs/${num}`), orderByChild('ts'), limitToLast(100));
-  const snap = await get(msgsRef);
-  if (snap.exists()) {
-    const msgs = [];
-    snap.forEach(c => { const m = c.val(); m.id = c.key; msgs.push(m); });
-    msgs.sort((a,b) => a.ts - b.ts);
-    let lastDate = '';
-    msgs.forEach(msg => {
-      const d = new Date(msg.ts);
-      const ds = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-      if (ds !== lastDate) { lastDate = ds; appendDateSep(ds); }
-      renderMessage(msg);
-    });
+  // Load messages from Firebase (get snapshot directly - no index needed)
+  try {
+    const msgsRef = ref(db, 'msgs/' + num);
+    const snap = await get(msgsRef);
+    area.innerHTML = '';
+    if (snap.exists()) {
+      const msgs = [];
+      snap.forEach(c => { const m = c.val(); m.id = c.key; msgs.push(m); });
+      msgs.sort((a,b) => (a.ts||0) - (b.ts||0));
+      let lastDate = '';
+      msgs.forEach(msg => {
+        window._renderedMsgIds.add(msg.id);
+        const d = new Date(msg.ts || Date.now());
+        const ds = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+        if (ds !== lastDate) { lastDate = ds; appendDateSep(ds); }
+        renderMessage(msg);
+      });
+    } else {
+      area.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);font-size:13px">No messages yet.<br>Send a message to start!</div>';
+    }
+  } catch(e) {
+    area.innerHTML = '';
+    console.error('Error loading messages:', e);
   }
-  scrollMsgs();
 
-  // Subscribe if not already
+  scrollMsgs();
   subscribeToMessages(num);
   renderConvoList();
 };
@@ -1094,19 +1115,20 @@ window.filterConvos = () => {
 };
 
 // ── NEW CHAT ──────────────────────────────────────────────────────────────────
-window.openNewChat = () => document.getElementById('newChatModal').classList.remove('gone');
-window.closeNewChat = () => document.getElementById('newChatModal').classList.add('gone');
+// openNewChat and closeNewChat defined below with contact picker logic
 
 window.startNewChat = () => {
   const name = document.getElementById('nc_name').value.trim();
-  const num  = document.getElementById('nc_number').value.trim().replace(/\D/g,'');
+  const num  = document.getElementById('nc_number').value.trim().replace(/[^0-9]/g,'');
   if (!num) { toast('⚠️ Enter a phone number'); return; }
   if (!convos[num]) convos[num] = { name: name||num, unread:0, lastMsg:'', lastTime: Date.now() };
   else if (name) convos[num].name = name;
-  // Save to Firebase
-  set(ref(db, `convos/${num}`), { name: convos[num].name, lastMsg: '', lastTime: Date.now() });
+  set(ref(db, 'convos/' + num), { name: convos[num].name, lastMsg: '', lastTime: Date.now() });
   saveConvos();
-  closeNewChat();
+  // Close ALL modals
+  document.getElementById('manualModal').classList.add('gone');
+  document.getElementById('contactPickerModal').classList.add('gone');
+  try { document.getElementById('newChatModal').classList.add('gone'); } catch(e) {}
   document.getElementById('nc_name').value = '';
   document.getElementById('nc_number').value = '';
   openChat(num);
@@ -1249,6 +1271,7 @@ if (savedTheme === 'light') {
 let allContacts = [];
 
 window.openNewChat = () => {
+  // Close chat panel first if open, then show contact picker
   document.getElementById('contactPickerModal').classList.remove('gone');
   loadContacts();
 };
@@ -1267,7 +1290,6 @@ window.closeManualModal = () => {
   document.getElementById('manualModal').classList.add('gone');
 };
 
-// Also update closeNewChat to close manual modal
 window.closeNewChat = () => {
   closeContactPicker();
   closeManualModal();
