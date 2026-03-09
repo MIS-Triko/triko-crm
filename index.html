@@ -1,3 +1,7 @@
+
+Index · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1049,6 +1053,17 @@ function formatSize(bytes) {
 
 window.handleKey = (e) => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
 window.autoGrow = (el) => { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; };
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+window.toast = toast;
 
 // Notification permission
 if ('Notification' in window && Notification.permission === 'default') {
