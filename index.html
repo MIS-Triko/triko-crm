@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Triko CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080b14;
+  --surface: #0f1524;
+  --surface2: #161d30;
+  --surface3: #1e2640;
+  --border: #252e4a;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --accent3: #8b5cf6;
+  --text: #e2e8f0;
+  --text2: #64748b;
+  --text3: #94a3b8;
+  --sent-bg: #1d3a6e;
+  --sent-border: #2563eb;
+  --recv-bg: #161d30;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 16px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%; height: 100dvh;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ── SETUP SCREEN ── */
+#setupScreen {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#setupScreen.gone { display: none; }
+
+.setup-card {
+  width: 100%; max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px 24px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+}
+.setup-logo {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700;
+  color: white; margin-bottom: 20px;
+}
+.setup-card h1 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.setup-card p { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+.setup-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text2); font-weight: 500; margin-bottom: 6px; margin-top: 14px; display: block; }
+.setup-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  outline: none; transition: border-color 0.2s;
+}
+.setup-input:focus { border-color: var(--accent); }
+.setup-btn {
+  width: 100%; margin-top: 24px; padding: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  border: none; border-radius: 12px; color: white;
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.3px;
+}
+.setup-btn:active { opacity: 0.85; }
+.setup-note { font-size: 11px; color: var(--text2); margin-top: 12px; text-align: center; line-height: 1.5; }
+
+/* ── MAIN APP ── */
+#app { display: flex; flex-direction: column; height: 100dvh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; gap: 10px;
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: white;
+}
+.brand-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+.brand-status { font-size: 10px; color: var(--success); }
+.topbar-actions { display: flex; gap: 6px; }
+.tbtn {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px; transition: background 0.15s;
+}
+.tbtn:active { background: var(--surface3); }
+
+/* ── LAYOUT ── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 100%; display: flex; flex-direction: column;
+  background: var(--surface); border-right: 1px solid var(--border);
+  overflow: hidden; flex-shrink: 0;
+}
+#sidebar.hidden { display: none; }
+
+.sidebar-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 12px;
+}
+.search-wrap input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+}
+.search-wrap input::placeholder { color: var(--text2); }
+
+.convos { flex: 1; overflow-y: auto; }
+.convos::-webkit-scrollbar { width: 3px; }
+.convos::-webkit-scrollbar-thumb { background: var(--border); }
+
+.convo-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s; position: relative;
+}
+.convo-item:active { background: var(--surface2); }
+.convo-item.active { background: var(--surface2); border-left: 2px solid var(--accent); }
+
+.avatar {
+  width: 44px; height: 44px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  color: white; flex-shrink: 0; text-transform: uppercase;
+}
+.av1 { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+.av2 { background: linear-gradient(135deg, #06b6d4, #10b981); }
+.av3 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+.av4 { background: linear-gradient(135deg, #ec4899, #8b5cf6); }
+.av5 { background: linear-gradient(135deg, #10b981, #3b82f6); }
+
+.convo-info { flex: 1; min-width: 0; }
+.convo-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Syne', sans-serif; }
+.convo-preview { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.convo-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.convo-time { font-size: 10px; color: var(--text2); }
+.unread { background: var(--accent); color: white; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+
+.new-chat-btn {
+  margin: 10px 12px; padding: 11px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  border: none; border-radius: 12px; color: white;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+  flex-shrink: 0;
+}
+.new-chat-btn:active { opacity: 0.85; }
+
+.empty-convos {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: var(--text2); padding: 30px; text-align: center;
+}
+.empty-convos .big-icon { font-size: 44px; }
+.empty-convos h3 { font-family: 'Syne', sans-serif; font-size: 15px; color: var(--text3); }
+.empty-convos p { font-size: 12px; line-height: 1.6; }
+
+/* ── CHAT PANEL ── */
+#chatPanel {
+  display: none; flex-direction: column;
+  width: 100%; overflow: hidden;
+}
+#chatPanel.open { display: flex; }
+
+.chat-topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 9px 13px; display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.back-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; flex-shrink: 0;
+}
+.chat-contact { flex: 1; min-width: 0; }
+.chat-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-num { font-size: 11px; color: var(--text2); }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+
+/* ── MESSAGES ── */
+.msgs {
+  flex: 1; overflow-y: auto; padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--bg);
+}
+.msgs::-webkit-scrollbar { width: 3px; }
+.msgs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.date-sep {
+  text-align: center; padding: 10px 0; flex-shrink: 0;
+}
+.date-sep span {
+  font-size: 11px; color: var(--text2);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 12px;
+}
+
+.bubble {
+  max-width: 82%; border-radius: 16px;
+  padding: 9px 12px; font-size: 13.5px; line-height: 1.5;
+  word-break: break-word; position: relative;
+  animation: popIn 0.18s ease;
+}
+@keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.bubble.sent {
+  background: var(--sent-bg); border: 1px solid var(--sent-border);
+  align-self: flex-end; border-bottom-right-radius: 4px; color: #bfdbfe;
+}
+.bubble.recv {
+  background: var(--recv-bg); border: 1px solid var(--border);
+  align-self: flex-start; border-bottom-left-radius: 4px;
+}
+.bubble-sender { font-size: 10px; color: var(--accent2); font-weight: 600; margin-bottom: 3px; }
+.bubble-time { font-size: 10px; color: var(--text2); margin-top: 4px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+
+/* Media bubbles */
+.media-bubble img {
+  max-width: 200px; max-height: 200px; border-radius: 10px;
+  display: block; cursor: pointer; object-fit: cover;
+}
+.media-bubble .file-card {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+  padding: 10px 12px; min-width: 160px; cursor: pointer;
+  border: 1px solid var(--border);
+}
+.file-icon { font-size: 24px; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; }
+.file-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-size { font-size: 10px; color: var(--text2); margin-top: 2px; }
+.file-dl { font-size: 16px; }
+
+.typing-dots {
+  display: none; align-self: flex-start;
+  background: var(--recv-bg); border: 1px solid var(--border);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  padding: 10px 14px; gap: 4px; align-items: center;
+}
+.typing-dots.show { display: flex; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text2); animation: tdot 1.2s infinite; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-5px);opacity:1} }
+
+/* ── INPUT AREA ── */
+.input-area {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 8px 10px; flex-shrink: 0;
+}
+.input-row { display: flex; align-items: flex-end; gap: 7px; }
+.attach-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.attach-btn:active { background: var(--surface3); }
+.msg-ta {
+  flex: 1; padding: 9px 13px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  outline: none; resize: none; max-height: 100px;
+  line-height: 1.4; transition: border-color 0.2s;
+}
+.msg-ta:focus { border-color: var(--accent); }
+.send-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  border: none; color: white; font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: opacity 0.15s;
+}
+.send-btn:active { opacity: 0.8; }
+
+/* Attach menu */
+.attach-menu {
+  display: none; padding: 8px 10px 4px;
+  gap: 8px; flex-wrap: wrap;
+}
+.attach-menu.open { display: flex; }
+.attach-opt {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 12px;
+  cursor: pointer; font-size: 11px; color: var(--text3);
+  transition: background 0.15s; flex: 1; min-width: 70px;
+}
+.attach-opt:active { background: var(--surface3); }
+.attach-opt span:first-child { font-size: 22px; }
+
+/* Preview bar */
+.preview-bar {
+  display: none; align-items: center; gap: 8px;
+  padding: 6px 10px; background: var(--surface2);
+  border-top: 1px solid var(--border); font-size: 12px;
+}
+.preview-bar.show { display: flex; }
+.preview-thumb { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
+.preview-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text3); }
+.preview-remove { cursor: pointer; font-size: 16px; color: var(--danger); padding: 4px; }
+
+/* ── NEW CHAT MODAL ── */
+#newChatModal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+#newChatModal.gone { display: none; }
+.modal-sheet {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 24px 24px 0 0; padding: 24px 18px 28px;
+  width: 100%; max-width: 480px;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-sheet h3 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-sheet input {
+  width: 100%; padding: 11px 14px; margin-bottom: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+}
+.modal-sheet input:focus { border-color: var(--accent); }
+.modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+.btn-cancel {
+  flex: 1; padding: 12px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 11px;
+  color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer;
+}
+.btn-go {
+  flex: 1; padding: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  border: none; border-radius: 11px; color: white;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-go:active { opacity: 0.85; }
+
+/* ── IMAGE LIGHTBOX ── */
+#lightbox {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+#lightbox.gone { display: none; }
+#lightbox img { max-width: 100%; max-height: 85vh; border-radius: 12px; object-fit: contain; }
+#lightbox .close-lb {
+  position: absolute; top: 16px; right: 16px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.1); border: none; color: white;
+  font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 9px 18px; font-size: 12px;
+  color: var(--text); opacity: 0; transition: opacity 0.25s;
+  pointer-events: none; white-space: nowrap; z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+#toast.show { opacity: 1; }
+
+/* Hidden inputs */
+#fileInput, #imageInput, #docInput { display: none; }
+
+/* Connection status */
+.conn-bar {
+  background: var(--warning); color: #000;
+  text-align: center; font-size: 11px; padding: 4px;
+  font-weight: 600; display: none;
+}
+.conn-bar.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HIDDEN FILE INPUTS -->
+<input type="file" id="imageInput" accept="image/*">
+<input type="file" id="docInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
+<input type="file" id="fileInput" accept="*/*">
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">T</div>
+    <h1>Triko CRM</h1>
+    <p>Enter your credentials to get started</p>
+    <label class="setup-label">WhatsApp Phone Number ID</label>
+    <input class="setup-input" id="s_phoneId" placeholder="e.g. 959729380565317" type="text">
+    <label class="setup-label">Access Token (Permanent)</label>
+    <input class="setup-input" id="s_token" placeholder="Your permanent access token" type="password">
+    <label class="setup-label">Agent Name</label>
+    <input class="setup-input" id="s_agent" placeholder="e.g. Priyanka" type="text" value="Priyanka">
+    <button class="setup-btn" onclick="saveSetup()">Start Chatting →</button>
+    <p class="setup-note">Your credentials are stored only on this device</p>
+  </div>
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div id="newChatModal" class="gone">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h3>💬 New Conversation</h3>
+    <input id="nc_name" placeholder="Customer Name (optional)" type="text">
+    <input id="nc_number" placeholder="Phone with country code e.g. 919876543210" type="tel">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeNewChat()">Cancel</button>
+      <button class="btn-go" onclick="startNewChat()">Start →</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div id="lightbox" class="gone">
+  <button class="close-lb" onclick="closeLightbox()">✕</button>
+  <img id="lbImg" src="" alt="">
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="conn-bar" id="connBar">⚠️ Connecting to Firebase...</div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-logo">T</div>
+      <div>
+        <div class="brand-name">Triko CRM</div>
+        <div class="brand-status" id="brandStatus">● Connecting...</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="tbtn" onclick="refreshAll()" title="Refresh">🔄</div>
+      <div class="tbtn" onclick="showSetup()" title="Settings">⚙️</div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-head">
+        <div class="search-wrap">
+          <span style="font-size:13px;color:var(--text2)">🔍</span>
+          <input placeholder="Search conversations..." id="searchInput" oninput="filterConvos()">
+        </div>
+      </div>
+      <div class="convos" id="convosContainer">
+        <div class="empty-convos" id="emptyConvos">
+          <div class="big-icon">💬</div>
+          <h3>No conversations yet</h3>
+          <p>Start a new chat or wait for<br>incoming messages</p>
+        </div>
+      </div>
+      <button class="new-chat-btn" onclick="openNewChat()">✏️ New Conversation</button>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div id="chatPanel">
+      <div class="chat-topbar">
+        <div class="back-btn" onclick="backToList()">←</div>
+        <div class="avatar av1" id="chatAvatar" style="width:36px;height:36px;font-size:13px;border-radius:10px">?</div>
+        <div class="chat-contact">
+          <div class="chat-name" id="chatName">—</div>
+          <div class="chat-num" id="chatNum">—</div>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+
+      <div class="msgs" id="msgsArea"></div>
+
+      <div class="input-area">
+        <div class="attach-menu" id="attachMenu">
+          <div class="attach-opt" onclick="triggerImage()"><span>🖼️</span><span>Image</span></div>
+          <div class="attach-opt" onclick="triggerDoc()"><span>📄</span><span>PDF/Doc</span></div>
+          <div class="attach-opt" onclick="triggerFile()"><span>📎</span><span>File</span></div>
+        </div>
+        <div class="preview-bar" id="previewBar">
+          <img class="preview-thumb" id="previewThumb" src="" style="display:none">
+          <span class="preview-name" id="previewName"></span>
+          <span class="preview-remove" onclick="clearAttach()">✕</span>
+        </div>
+        <div class="input-row">
+          <div class="attach-btn" onclick="toggleAttach()" id="attachToggle">📎</div>
+          <textarea class="msg-ta" id="msgInput" placeholder="Type a message..." rows="1"
+            onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
+          <button class="send-btn" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded, set, get, query, orderByChild, limitToLast }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBcBgpN8Zh1SKuIjASShfJ97KhpZYFnqRA",
+  authDomain: "triko-crm1.firebaseapp.com",
+  databaseURL: "https://triko-crm1-default-rtdb.firebaseio.com",
+  projectId: "triko-crm1",
+  storageBucket: "triko-crm1.firebasestorage.app",
+  messagingSenderId: "952294338018",
+  appId: "1:952294338018:web:438c315f230561d6035dbb"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getDatabase(fbApp);
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let cfg = {};
+let activeNum = null;
+let convos = {};   // { number: { name, unread, lastTime, lastMsg } }
+let listeners = {}; // active Firebase listeners
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('trikoCRM_cfg');
+  if (saved) {
+    cfg = JSON.parse(saved);
+    document.getElementById('setupScreen').classList.add('gone');
+    updateStatus('● Live', '#10b981');
+    loadConvosFromFirebase();
+  }
+  // Load local convos cache
+  const lc = localStorage.getItem('trikoCRM_convos');
+  if (lc) convos = JSON.parse(lc);
+  renderConvoList();
+});
+
+// ── SETUP ────────────────────────────────────────────────────────────────────
+window.saveSetup = () => {
+  const phoneId = document.getElementById('s_phoneId').value.trim();
+  const token   = document.getElementById('s_token').value.trim();
+  const agent   = document.getElementById('s_agent').value.trim() || 'Priyanka';
+  if (!phoneId || !token) { toast('⚠️ Phone ID and Token are required'); return; }
+  cfg = { phoneId, token, agent };
+  localStorage.setItem('trikoCRM_cfg', JSON.stringify(cfg));
+  document.getElementById('setupScreen').classList.add('gone');
+  updateStatus('● Live', '#10b981');
+  loadConvosFromFirebase();
+  toast('✅ Setup saved!');
+};
+
+window.showSetup = () => {
+  document.getElementById('s_phoneId').value = cfg.phoneId || '';
+  document.getElementById('s_token').value = cfg.token || '';
+  document.getElementById('s_agent').value = cfg.agent || '';
+  document.getElementById('setupScreen').classList.remove('gone');
+};
+
+// ── FIREBASE: LOAD ALL CONVERSATIONS ─────────────────────────────────────────
+function loadConvosFromFirebase() {
+  const convosRef = ref(db, 'convos');
+  get(convosRef).then(snap => {
+    if (snap.exists()) {
+      const data = snap.val();
+      Object.keys(data).forEach(num => {
+        if (!convos[num]) convos[num] = { name: data[num].name || num, unread: 0 };
+        convos[num].name = data[num].name || convos[num].name;
+        convos[num].lastMsg = data[num].lastMsg || '';
+        convos[num].lastTime = data[num].lastTime || '';
+      });
+      saveConvos();
+      renderConvoList();
+    }
+  });
+  // Listen for new convos
+  onChildAdded(convosRef, snap => {
+    const num = snap.key;
+    const data = snap.val();
+    if (!convos[num]) {
+      convos[num] = { name: data.name || num, unread: 0, lastMsg: data.lastMsg || '', lastTime: data.lastTime || '' };
+      saveConvos();
+      renderConvoList();
+    }
+    // Subscribe to messages for this convo
+    subscribeToMessages(num);
+  });
+}
+
+// ── FIREBASE: SUBSCRIBE TO MESSAGES ──────────────────────────────────────────
+function subscribeToMessages(num) {
+  if (listeners[num]) return; // already listening
+  const msgsRef = query(ref(db, `msgs/${num}`), orderByChild('ts'), limitToLast(200));
+  listeners[num] = onChildAdded(msgsRef, snap => {
+    const msg = snap.val();
+    msg.id = snap.key;
+    // Update convo metadata
+    if (!convos[num]) convos[num] = { name: msg.name || num, unread: 0 };
+    convos[num].lastMsg = msg.type === 'text' ? msg.content : '📎 ' + msg.type;
+    convos[num].lastTime = msg.ts;
+    if (msg.dir === 'recv' && num !== activeNum) {
+      convos[num].unread = (convos[num].unread || 0) + 1;
+      toast('💬 New message from ' + (convos[num].name || num));
+      // Notification
+      if (Notification.permission === 'granted') {
+        new Notification('Triko CRM — ' + (convos[num].name || num), { body: msg.content, icon: '' });
+      }
+    }
+    saveConvos();
+    renderConvoList();
+    if (num === activeNum) {
+      renderMessage(msg);
+      scrollMsgs();
+    }
+  });
+}
+
+// ── OPEN CHAT ─────────────────────────────────────────────────────────────────
+window.openChat = async (num) => {
+  activeNum = num;
+  const conv = convos[num] || { name: num, unread: 0 };
+  conv.unread = 0;
+  saveConvos();
+
+  // UI
+  document.getElementById('sidebar').classList.add('hidden');
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('chatName').textContent = conv.name || num;
+  document.getElementById('chatNum').textContent = '+' + num;
+  document.getElementById('chatAvatar').textContent = (conv.name || num)[0].toUpperCase();
+
+  // Clear messages area
+  const area = document.getElementById('msgsArea');
+  area.innerHTML = '';
+
+  // Load messages from Firebase
+  const msgsRef = query(ref(db, `msgs/${num}`), orderByChild('ts'), limitToLast(100));
+  const snap = await get(msgsRef);
+  if (snap.exists()) {
+    const msgs = [];
+    snap.forEach(c => { const m = c.val(); m.id = c.key; msgs.push(m); });
+    msgs.sort((a,b) => a.ts - b.ts);
+    let lastDate = '';
+    msgs.forEach(msg => {
+      const d = new Date(msg.ts);
+      const ds = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+      if (ds !== lastDate) { lastDate = ds; appendDateSep(ds); }
+      renderMessage(msg);
+    });
+  }
+  scrollMsgs();
+
+  // Subscribe if not already
+  subscribeToMessages(num);
+  renderConvoList();
+};
+
+window.backToList = () => {
+  activeNum = null;
+  document.getElementById('sidebar').classList.remove('hidden');
+  document.getElementById('chatPanel').classList.remove('open');
+  clearAttachState();
+};
+
+// ── SEND MESSAGE ──────────────────────────────────────────────────────────────
+window.sendMsg = async () => {
+  if (!activeNum) return;
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+
+  // If file pending, send file
+  if (window._pendingFile) {
+    await sendFile(window._pendingFile);
+    return;
+  }
+
+  if (!text) return;
+  input.value = '';
+  autoGrow(input);
+
+  const ts = Date.now();
+  const msgData = { dir: 'sent', type: 'text', content: text, ts, agent: cfg.agent || 'Agent' };
+
+  // Save to Firebase
+  const newRef = await push(ref(db, `msgs/${activeNum}`), msgData);
+  msgData.id = newRef.key;
+
+  // Update convo
+  updateConvoMeta(activeNum, text, ts);
+
+  // Send via WhatsApp API
+  try {
+    const res = await fetch(`https://graph.facebook.com/v18.0/${cfg.phoneId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + cfg.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: activeNum, type: 'text', text: { body: text } })
+    });
+    const data = await res.json();
+    if (data.error) toast('⚠️ ' + data.error.message);
+  } catch(e) { toast('❌ Network error'); }
+};
+
+// ── SEND FILE ─────────────────────────────────────────────────────────────────
+async function sendFile(fileObj) {
+  if (!activeNum || !fileObj) return;
+  toast('📤 Uploading file...');
+
+  try {
+    // Step 1: Upload to Meta
+    const formData = new FormData();
+    formData.append('messaging_product', 'whatsapp');
+    formData.append('file', fileObj.file);
+    formData.append('type', fileObj.file.type);
+
+    const uploadRes = await fetch(`https://graph.facebook.com/v18.0/${cfg.phoneId}/media`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + cfg.token },
+      body: formData
+    });
+    const uploadData = await uploadRes.json();
+
+    if (!uploadData.id) {
+      toast('❌ Upload failed: ' + (uploadData.error?.message || 'Unknown error'));
+      return;
+    }
+
+    const mediaId = uploadData.id;
+    const ts = Date.now();
+    const isImage = fileObj.file.type.startsWith('image/');
+    const msgType = isImage ? 'image' : 'document';
+
+    // Step 2: Send via API
+    const body = {
+      messaging_product: 'whatsapp',
+      to: activeNum,
+      type: msgType,
+      [msgType]: isImage
+        ? { id: mediaId, caption: fileObj.file.name }
+        : { id: mediaId, filename: fileObj.file.name }
+    };
+
+    const sendRes = await fetch(`https://graph.facebook.com/v18.0/${cfg.phoneId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + cfg.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const sendData = await sendRes.json();
+
+    if (sendData.error) { toast('❌ ' + sendData.error.message); return; }
+
+    // Step 3: Save to Firebase with local URL for preview
+    const localUrl = fileObj.previewUrl || '';
+    const msgData = {
+      dir: 'sent', type: msgType, content: fileObj.file.name,
+      mediaId, localUrl, ts, agent: cfg.agent || 'Agent',
+      fileSize: fileObj.file.size
+    };
+    await push(ref(db, `msgs/${activeNum}`), msgData);
+    updateConvoMeta(activeNum, '📎 ' + fileObj.file.name, ts);
+    clearAttachState();
+    toast('✅ File sent!');
+
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+  }
+}
+
+// ── RENDER MESSAGE ────────────────────────────────────────────────────────────
+function renderMessage(msg) {
+  const area = document.getElementById('msgsArea');
+  const isSent = msg.dir === 'sent';
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble ' + (isSent ? 'sent' : 'recv') + ' media-bubble';
+  wrap.dataset.id = msg.id;
+
+  let inner = '';
+  if (!isSent) inner += `<div class="bubble-sender">${msg.name || 'Client'}</div>`;
+
+  if (msg.type === 'text') {
+    inner += escHtml(msg.content);
+  } else if (msg.type === 'image') {
+    if (msg.localUrl) {
+      inner += `<img src="${msg.localUrl}" onclick="openLightbox('${msg.localUrl}')" loading="lazy">`;
+    } else if (msg.mediaId) {
+      // Load image from Meta API
+      inner += `<div class="file-card" onclick="loadMediaImage(this,'${msg.mediaId}')">
+        <span class="file-icon">🖼️</span>
+        <div class="file-info"><div class="file-name">Tap to load image</div><div class="file-size">Image</div></div>
+        <span class="file-dl">👁️</span>
+      </div>`;
+    }
+  } else if (msg.type === 'document' || msg.type === 'audio' || msg.type === 'video') {
+    const icons = { document: '📄', audio: '🎵', video: '🎥' };
+    const icon = icons[msg.type] || '📎';
+    const size = msg.fileSize ? formatSize(msg.fileSize) : '';
+    if (msg.localUrl) {
+      inner += `<div class="file-card" onclick="window.open('${msg.localUrl}','_blank')">
+        <span class="file-icon">${icon}</span>
+        <div class="file-info"><div class="file-name">${escHtml(msg.content)}</div><div class="file-size">${size}</div></div>
+        <span class="file-dl">⬇️</span>
+      </div>`;
+    } else {
+      inner += `<div class="file-card" onclick="loadMediaDoc(this,'${msg.mediaId}','${escHtml(msg.content)}')">
+        <span class="file-icon">${icon}</span>
+        <div class="file-info"><div class="file-name">${escHtml(msg.content || msg.type)}</div><div class="file-size">Tap to download</div></div>
+        <span class="file-dl">⬇️</span>
+      </div>`;
+    }
+  } else {
+    inner += `<span style="color:var(--text2)">${escHtml(msg.content || msg.type)}</span>`;
+  }
+
+  const time = new Date(msg.ts).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+  inner += `<div class="bubble-time">${time}${isSent ? ' <span style="color:var(--accent2)">✓</span>' : ''}</div>`;
+
+  wrap.innerHTML = inner;
+  area.appendChild(wrap);
+}
+
+function appendDateSep(label) {
+  const d = document.createElement('div');
+  d.className = 'date-sep';
+  d.innerHTML = `<span>${label}</span>`;
+  document.getElementById('msgsArea').appendChild(d);
+}
+
+// ── LOAD MEDIA FROM META ──────────────────────────────────────────────────────
+window.loadMediaImage = async (el, mediaId) => {
+  try {
+    el.innerHTML = '<span style="color:var(--text2);font-size:12px">Loading...</span>';
+    const r = await fetch(`https://graph.facebook.com/v18.0/${mediaId}`, {
+      headers: { 'Authorization': 'Bearer ' + cfg.token }
+    });
+    const d = await r.json();
+    if (d.url) {
+      const imgEl = document.createElement('img');
+      imgEl.style.cssText = 'max-width:200px;max-height:200px;border-radius:10px;display:block;cursor:pointer;object-fit:cover;';
+      imgEl.onclick = () => openLightbox(d.url);
+      imgEl.src = d.url;
+      el.parentNode.replaceChild(imgEl, el);
+    }
+  } catch(e) { toast('❌ Could not load image'); }
+};
+
+window.loadMediaDoc = async (el, mediaId, name) => {
+  try {
+    const r = await fetch(`https://graph.facebook.com/v18.0/${mediaId}`, {
+      headers: { 'Authorization': 'Bearer ' + cfg.token }
+    });
+    const d = await r.json();
+    if (d.url) window.open(d.url, '_blank');
+  } catch(e) { toast('❌ Could not load file'); }
+};
+
+// ── CONVO LIST ────────────────────────────────────────────────────────────────
+window.renderConvoList = () => {
+  const container = document.getElementById('convosContainer');
+  const empty = document.getElementById('emptyConvos');
+  const sorted = Object.entries(convos).sort((a,b) => (b[1].lastTime||0) - (a[1].lastTime||0));
+
+  container.querySelectorAll('.convo-item').forEach(e => e.remove());
+
+  if (sorted.length === 0) { empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+
+  const avClasses = ['av1','av2','av3','av4','av5'];
+  sorted.forEach(([num, conv], i) => {
+    const el = document.createElement('div');
+    el.className = 'convo-item' + (num === activeNum ? ' active' : '');
+    el.onclick = () => openChat(num);
+    const time = conv.lastTime ? new Date(conv.lastTime).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',hour12:true}) : '';
+    el.innerHTML = `
+      <div class="avatar ${avClasses[i % avClasses.length]}">${(conv.name||num)[0].toUpperCase()}</div>
+      <div class="convo-info">
+        <div class="convo-name">${conv.name||num}</div>
+        <div class="convo-preview">${conv.lastMsg||'No messages yet'}</div>
+      </div>
+      <div class="convo-meta">
+        <div class="convo-time">${time}</div>
+        ${conv.unread ? `<div class="unread">${conv.unread}</div>` : ''}
+      </div>`;
+    container.appendChild(el);
+  });
+};
+
+window.filterConvos = () => {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.convo-item').forEach(el => {
+    const name = el.querySelector('.convo-name').textContent.toLowerCase();
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+};
+
+// ── NEW CHAT ──────────────────────────────────────────────────────────────────
+window.openNewChat = () => document.getElementById('newChatModal').classList.remove('gone');
+window.closeNewChat = () => document.getElementById('newChatModal').classList.add('gone');
+
+window.startNewChat = () => {
+  const name = document.getElementById('nc_name').value.trim();
+  const num  = document.getElementById('nc_number').value.trim().replace(/\D/g,'');
+  if (!num) { toast('⚠️ Enter a phone number'); return; }
+  if (!convos[num]) convos[num] = { name: name||num, unread:0, lastMsg:'', lastTime: Date.now() };
+  else if (name) convos[num].name = name;
+  // Save to Firebase
+  set(ref(db, `convos/${num}`), { name: convos[num].name, lastMsg: '', lastTime: Date.now() });
+  saveConvos();
+  closeNewChat();
+  document.getElementById('nc_name').value = '';
+  document.getElementById('nc_number').value = '';
+  openChat(num);
+};
+
+// ── ATTACH FILES ──────────────────────────────────────────────────────────────
+window._pendingFile = null;
+
+window.toggleAttach = () => {
+  const menu = document.getElementById('attachMenu');
+  menu.classList.toggle('open');
+};
+
+window.triggerImage = () => { document.getElementById('imageInput').click(); closeAttachMenu(); };
+window.triggerDoc   = () => { document.getElementById('docInput').click();   closeAttachMenu(); };
+window.triggerFile  = () => { document.getElementById('fileInput').click();  closeAttachMenu(); };
+
+function closeAttachMenu() { document.getElementById('attachMenu').classList.remove('open'); }
+
+document.getElementById('imageInput').addEventListener('change', e => handleFileSelect(e.target.files[0]));
+document.getElementById('docInput').addEventListener('change',   e => handleFileSelect(e.target.files[0]));
+document.getElementById('fileInput').addEventListener('change',  e => handleFileSelect(e.target.files[0]));
+
+function handleFileSelect(file) {
+  if (!file) return;
+  const isImg = file.type.startsWith('image/');
+  const previewUrl = URL.createObjectURL(file);
+  window._pendingFile = { file, previewUrl };
+
+  const bar = document.getElementById('previewBar');
+  const thumb = document.getElementById('previewThumb');
+  const name = document.getElementById('previewName');
+
+  bar.classList.add('show');
+  name.textContent = file.name + ' (' + formatSize(file.size) + ')';
+
+  if (isImg) {
+    thumb.src = previewUrl;
+    thumb.style.display = 'block';
+  } else {
+    thumb.style.display = 'none';
+  }
+}
+
+window.clearAttach = () => clearAttachState();
+function clearAttachState() {
+  window._pendingFile = null;
+  document.getElementById('previewBar').classList.remove('show');
+  document.getElementById('previewThumb').src = '';
+  document.getElementById('previewThumb').style.display = 'none';
+  document.getElementById('previewName').textContent = '';
+  document.getElementById('imageInput').value = '';
+  document.getElementById('docInput').value = '';
+  document.getElementById('fileInput').value = '';
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+window.openLightbox = (src) => {
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lightbox').classList.remove('gone');
+};
+window.closeLightbox = () => document.getElementById('lightbox').classList.add('gone');
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+window.refreshAll = () => { toast('🔄 Refreshing...'); loadConvosFromFirebase(); };
+
+function updateConvoMeta(num, lastMsg, ts) {
+  if (!convos[num]) convos[num] = { name: num, unread: 0 };
+  convos[num].lastMsg = lastMsg;
+  convos[num].lastTime = ts;
+  set(ref(db, `convos/${num}`), { name: convos[num].name, lastMsg, lastTime: ts });
+  saveConvos();
+  renderConvoList();
+}
+
+function saveConvos() { localStorage.setItem('trikoCRM_convos', JSON.stringify(convos)); }
+
+function scrollMsgs() {
+  const a = document.getElementById('msgsArea');
+  setTimeout(() => a.scrollTop = a.scrollHeight, 50);
+}
+
+function updateStatus(text, color) {
+  const el = document.getElementById('brandStatus');
+  el.textContent = text;
+  el.style.color = color;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+window.handleKey = (e) => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
+window.autoGrow = (el) => { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; };
+
+// Notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// Expose renderConvoList globally for HTML onclick
+window.renderConvoList = renderConvoList;
+</script>
+</body>
+</html>
